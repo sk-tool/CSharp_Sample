@@ -1,0 +1,90 @@
+Option Explicit
+
+'マイドキュメントにTEMP.EXCELファイルを作ってシート1の正規表現（ファイル名）とそのセル番地をコピーする。
+'シート２にはマスタをコピーしてそれの正規表現（ファイル名）と結合する
+'結合した表のセル番地をもとに結果を出力する。
+Sub ReadCsv()
+    Dim objCn1 As New ADODB.Connection
+    Dim objRS1 As ADODB.Recordset
+    Dim strSQL1 As String
+    Dim filePath1 As String
+    Dim criteria As String
+    Set objCn1 = CreateObject("ADODB.Connection")
+    Set objRS1 = CreateObject("ADODB.Recordset")
+    
+    filePath1 = "C:\Users\sk_th\OneDrive\Desktop\VBA\都道府県.xlsx"
+    'コネクション
+   'ADO接続
+    objCn1.Provider = "Microsoft.ACE.OLEDB.12.0"
+    objCn1.Properties("Extended Properties") = "Excel 12.0"
+    objCn1.Open filePath1
+
+    'SQL文の実行　[シート名$]
+    objRS1.Open "SELECT DISTINCT[都道府県1$].都道府県名 FROM [都道府県1$],[都道府県2$] where [都道府県1$].都道府県名 = [都道府県2$].都道府県名", objCn1, adOpenKeyset, adLockOptimistic
+
+    
+    '検索
+    'criteria = "都道府県名 = '東'"
+    'objRS1.Find criteria, 0, adSearchForward
+    Dim i As Integer
+    i = 0
+    Do Until objRS1.EOF
+        i = i + 1
+        Debug.Print i, objRS1!都道府県名
+        objRS1.MoveNext
+    Loop
+    
+    '確認
+'    If objRS1.EOF Then
+'        Debug.Print "見つかりません"
+'    Else
+'        Debug.Print objRS1!都道府県名 & "  " & objRS1!人口
+'    End If
+
+    'メモリの解放（無くとも構わない）
+    objRS1.Close
+    Set objRS1 = Nothing
+    objCn1.Close
+    Set objCn1 = Nothing
+End Sub
+
+Sub Recordset()
+    Dim objRS1 As New ADODB.Recordset
+    Dim criteria As String
+    
+    With objRS1.Fields
+        .Append "フィールド名", adVarChar, 65535
+    End With
+    
+    objRS1.Open
+    '追加
+    With objRS1
+        .AddNew
+        !フィールド名 = "あいうえお"
+        .Update
+    End With
+    objRS1.MoveFirst
+    '検索
+    criteria = "フィールド名 = 'あいうえお'"
+    objRS1.Find criteria, 0, adSearchForward
+
+    '確認
+    If objRS1.EOF Then
+        Debug.Print "見つかりません"
+    Else
+        Debug.Print objRS1!フィールド名
+    End If
+    
+    'メモリの解放（無くとも構わない）
+    objRS1.Close
+    Set objRS1 = Nothing
+End Sub
+
+Function getDocumentPath() As String
+    Dim wsh As Object
+    Set wsh = CreateObject("WScript.Shell")
+    
+    '--- 特殊フォルダのパスを格納する変数　---'
+    Dim path As String
+    getDocumentPath = wsh.SpecialFolders(["MyDocuments"])
+End Function
